@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './app/layouts/styles.css';
 import App from './app/layouts/App';
 import reportWebVitals from './reportWebVitals';
+import {store, StoreContext} from './app/stores/store'
 
 
 ReactDOM.render(
@@ -12,7 +13,10 @@ ReactDOM.render(
         href="https://cdn.jsdelivr.net/npm/semantic-ui@2/dist/semantic.min.css"
       />
       <script src="https://cdn.jsdelivr.net/npm/semantic-ui-react/dist/umd/semantic-ui-react.min.js"></script>
-      <App />
+      <StoreContext.Provider value={store}>
+        <App />
+      </StoreContext.Provider>
+      
     </>,
     
   document.getElementById('root')
