@@ -4,21 +4,25 @@ import './app/layouts/styles.css';
 import App from './app/layouts/App';
 import reportWebVitals from './reportWebVitals';
 import {store, StoreContext} from './app/stores/store'
+import { BrowserRouter } from 'react-router-dom';
 
 
 ReactDOM.render(
-    <>
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/semantic-ui@2/dist/semantic.min.css"
-      />
-      <script src="https://cdn.jsdelivr.net/npm/semantic-ui-react/dist/umd/semantic-ui-react.min.js"></script>
-      <StoreContext.Provider value={store}>
-        <App />
-      </StoreContext.Provider>
-      
-    </>,
-    
+  <>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/semantic-ui@2/dist/semantic.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui-react/dist/umd/semantic-ui-react.min.js"></script>
+    {/* <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/dist/semantic.min.css">
+    <script src="/dist/semantic.min.js"></script> */}
+    <StoreContext.Provider value={store}>
+      <BrowserRouter>
+        <App/>
+      </BrowserRouter>
+    </StoreContext.Provider>
+  </>,
   document.getElementById('root')
 );
 
