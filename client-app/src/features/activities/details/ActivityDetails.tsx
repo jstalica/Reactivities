@@ -1,9 +1,13 @@
 import React, { useEffect } from "react";
-import { Button, Card, Image } from "semantic-ui-react";
+import { Grid } from "semantic-ui-react";
 import { useStore } from "../../../app/stores/store";
 import LoadingComponents from '../../../app/layouts/LoadingComponents';
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { observer } from "mobx-react-lite";
+import ActivityDetailedHeader from '../details/ActivityDetailedHeader'
+import ActivityDetailedInfo from '../details/ActivityDetailedInfo'
+import ActivityDetailedChat from '../details/ActivityDetailedChat'
+import ActivityDetailedSideBar from '../details/ActivityDetailedSideBar'
 
 
 export default observer(function ActivityDetails() {
@@ -18,23 +22,15 @@ export default observer(function ActivityDetails() {
     if (loadingInitial || !activity) return <LoadingComponents/>;
 
     return (
-        <Card fluid>
-            <Image src={`/assets/categoryImages/${activity.category}.jpg`} />
-            <Card.Content>
-                <Card.Header>{activity.title}</Card.Header>
-                <Card.Meta>
-                    <span>{activity.date}</span>
-                </Card.Meta>
-                <Card.Description>
-                {activity.description}
-                </Card.Description>
-            </Card.Content>
-            <Card.Content extra>
-                <Button.Group widths='2'>
-                    <Button as={Link} to={`/manage/${activity.id}`} basic color="blue" content='Edit'/>
-                    <Button as={Link} to='/activities' basic color="grey" content='Cancel'/>
-                </Button.Group>
-            </Card.Content>
-        </Card>
+        <Grid>
+            <Grid.Column width={10}>
+                <ActivityDetailedHeader activity={activity}/>
+                <ActivityDetailedInfo activity={activity}/>
+                <ActivityDetailedChat/>
+            </Grid.Column>
+            <Grid.Column width={6}>
+                <ActivityDetailedSideBar/>
+            </Grid.Column>
+        </Grid>
     )
 })
