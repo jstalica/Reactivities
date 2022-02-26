@@ -2,10 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import 'react-calendar/dist/Calendar.css'
 import './app/layouts/styles.css';
+import 'react-toastify/dist/ReactToastify.min.css'
 import App from './app/layouts/App';
 import reportWebVitals from './reportWebVitals';
-import {store, StoreContext} from './app/stores/store'
-import { BrowserRouter } from 'react-router-dom';
+import { store, StoreContext } from './app/stores/store'
+import { Router } from 'react-router-dom';
+import { createBrowserHistory, History } from 'history';
+
+export const history: History = createBrowserHistory()
 
 
 ReactDOM.render(
@@ -19,9 +23,9 @@ ReactDOM.render(
     <link rel="stylesheet" type="text/css" href="/dist/semantic.min.css">
     <script src="/dist/semantic.min.js"></script> */}
     <StoreContext.Provider value={store}>
-      <BrowserRouter>
-        <App/>
-      </BrowserRouter>
+      <Router history={history}>
+        <App />
+      </Router>
     </StoreContext.Provider>
   </>,
   document.getElementById('root')
