@@ -67,6 +67,7 @@ export default class ProfileStore {
                     this.profile.photos.find(p => p.id === photo.id)!.isMain = true;
                     this.profile.image = photo.url;
                 }
+                store.activityStore.updateMainPhoto(photo);
                 this.loading = false;
             })
 
@@ -80,6 +81,7 @@ export default class ProfileStore {
         this.loading = true;
         try {
             await agent.Profiles.deletePhoto(id);
+            
             runInAction(() => {
                 if (this.profile && this.profile.photos) {
                     this.profile.photos = this.profile.photos.filter(p => p.id !== id);

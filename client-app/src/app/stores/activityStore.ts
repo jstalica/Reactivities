@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { makeAutoObservable, runInAction } from 'mobx';
 import agent from '../api/agent';
 import { Activity, ActivityFormValues } from '../models/activity';
-import { Profile } from '../models/profile';
+import { Photo, Profile } from '../models/profile';
 import { store } from './store';
 
 export default class ActivityStore {
@@ -174,6 +174,19 @@ export default class ActivityStore {
         } finally {
             runInAction(() => this.loading = false);
         }
+    }
+
+    updateMainPhoto = async (photo:Photo) => {
+        this.activityRegistry.forEach(a => {
+            if(a.host?.username === store.userStore.user?.username && a.host) {
+                a.host.image = photo.url
+            }
+            a.attendees.forEach(a => {
+                if(a.username === store.userStore.user?.username) {
+                    a.image = photo.url
+                }
+            })
+        });
     }
 
 }
