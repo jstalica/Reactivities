@@ -14,5 +14,10 @@ namespace Application.Profiles
         public string Image { get; set; }
         public ICollection<Photo> Photos { get; set; }
 
+        public override string ToString()
+        {
+            return "Username: " + Username + " Displayname: " + DisplayName + " Bio: "+ Bio + " Image: " + Image;
+        }
+
     }
 }

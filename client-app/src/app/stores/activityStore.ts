@@ -189,4 +189,16 @@ export default class ActivityStore {
         });
     }
 
+    updateBio = async (profile:Profile | null) => {
+        if (profile !== null) {
+            this.activityRegistry.forEach(a => {
+                a.attendees.forEach(b => {
+                    if(b.username === profile.username) {
+                        b.bio = profile.bio
+                    }
+                })
+            });
+        }
+    }
+
 }

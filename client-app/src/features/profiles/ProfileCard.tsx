@@ -8,6 +8,13 @@ interface Props {
     profile: Profile
 }
 
+function truncateString(s: string | undefined, n: number) {
+    if (!s) return '';
+    if (s.length < n) return s;
+
+    return s.slice(0, n) + '...';
+}
+
 export default observer(function ProfileCard({ profile }: Props) {
     return (
         <Card as={Link} to={`/profiles/${profile.username}`}>
@@ -17,11 +24,11 @@ export default observer(function ProfileCard({ profile }: Props) {
                     {profile.displayName}
                 </Card.Header>
                 <Card.Description>
-                    Bio goes here
+                    {profile.bio && truncateString(profile.bio,40)}
                 </Card.Description>
             </Card.Content>
             <Card.Content extra>
-                <Icon name='user'/>
+                <Icon name='user' />
                 20 followers
             </Card.Content>
         </Card>

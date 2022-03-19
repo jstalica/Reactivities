@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import agent from "../api/agent";
-import { Photo, Profile } from "../models/profile";
+import { Photo, Profile, ProfileFormValues } from "../models/profile";
 import { store } from "./store";
 
 export default class ProfileStore {
@@ -23,11 +23,14 @@ export default class ProfileStore {
     loadProfile = async (username: string) => {
         this.loadingProfile = true;
         try {
-            const profile = await agent.Profiles.get(username);
-            runInAction(() => {
-                this.profile = profile
-                this.loadingProfile = false;
-            })
+            // TODO: Skip loading if profile is current users
+            if (this.profile?.username !== username) {
+                const profile = await agent.Profiles.get(username);
+                runInAction(() => {
+                    this.profile = profile
+                })
+            }
+            runInAction(() => this.loadingProfile = false);
 
         } catch (error) {
             console.log(error);
@@ -85,6 +88,24 @@ export default class ProfileStore {
             runInAction(() => {
                 if (this.profile && this.profile.photos) {
                     this.profile.photos = this.profile.photos.filter(p => p.id !== id);
+                }
+                this.loading = false;
+            })
+        } catch (error) {
+            runInAction(() => this.loading = false);
+            console.log(error);
+        }
+    }
+
+    updateProfile = async (profile: ProfileFormValues) => {
+        this.loading = true;
+        try {
+            await agent.Profiles.update(profile);
+
+            runInAction(() => {
+                if(this.profile) {
+                    this.profile.bio = profile.bio;
+                    this.profile.displayName = profile.displayName;
                 }
                 this.loading = false;
             })
