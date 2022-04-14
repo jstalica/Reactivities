@@ -37,3 +37,10 @@ export class ProfileFormValues {
     }
     
 }
+
+export interface ProfileEvent {
+    id:string;
+    title:string;
+    category:string;
+    date:Date;
+}

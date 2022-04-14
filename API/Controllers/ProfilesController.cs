@@ -21,5 +21,11 @@ namespace API.Controllers
         {
             return HandleResult(await Mediator.Send(new Edit.Command{Profile=profile}));
         }
+
+        [HttpGet("{username}/events")]
+        public async Task<IActionResult> GetProfileEvents(string username, [FromQuery]ProfileEventsParams param)
+        {
+            return HandlePagedResult(await Mediator.Send(new ProfileEventsDetails.Query{Username=username, Params=param}));
+        }
     }
 }

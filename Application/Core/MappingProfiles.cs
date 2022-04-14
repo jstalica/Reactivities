@@ -4,12 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Application.Activities;
 using Application.Comments;
+using Application.Profiles;
 using AutoMapper;
 using Domain;
 
 namespace Application.Core
 {
-    public class MappingProfiles : Profile
+    public class MappingProfiles : AutoMapper.Profile
     {
         public MappingProfiles()
         {
@@ -17,6 +18,8 @@ namespace Application.Core
 
             CreateMap<Activity, Activity>();
             CreateMap<Activity, ActivityDto>()
+                .ForMember(d => d.HostUsername, o => o.MapFrom(s => s.Attendees.FirstOrDefault(x => x.IsHost).AppUser.UserName));
+            CreateMap<Activity, UserActivityDto>()
                 .ForMember(d => d.HostUsername, o => o.MapFrom(s => s.Attendees.FirstOrDefault(x => x.IsHost).AppUser.UserName));
             CreateMap<ActivityAttendee, AttendeeDto>()
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.AppUser.DisplayName))

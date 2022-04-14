@@ -1,7 +1,8 @@
 import { format } from 'date-fns';
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, reaction, runInAction } from 'mobx';
 import agent from '../api/agent';
 import { Activity, ActivityFormValues } from '../models/activity';
+import { Pagination, PagingParams } from '../models/pagination';
 import { Photo, Profile } from '../models/profile';
 import { store } from './store';
 
@@ -12,13 +13,73 @@ export default class ActivityStore {
     editMode = false;
     loading = false;
     loadingInitial = false;
+    pagination: Pagination | null = null;
+    pagingParams: PagingParams = new PagingParams();
+    predicate = new Map().set('all',true);
 
     constructor() {
         makeAutoObservable(this);
+        
+        reaction(
+            // When a filter is updated
+            () => this.predicate.keys(),
+            () => {
+                // Start over with pagination
+                this.pagingParams = new PagingParams();
+                // Remove the stored activities
+                this.activityRegistry.clear();
+                // Load the new filtered activities
+                this.loadActivities();
+            }
+        )
     }
 
     get activitiesByDate() {
         return Array.from(this.activityRegistry.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    }
+
+    setPagingParams = (pagingParams: PagingParams) => {
+        this.pagingParams = pagingParams;
+    }
+
+    setPredicate = (predicate: string, value: string | Date) => {
+        const resetPredicate = () => {
+            this.predicate.forEach((value,key) => {
+                if(key !== 'startDate') this.predicate.delete(key);
+            })
+        }
+        switch (predicate) {
+            case 'all' :
+                resetPredicate();
+                this.predicate.set('all',true);
+                break;
+            case 'isGoing' :
+                resetPredicate();
+                this.predicate.set('isGoing',true);
+                break;
+            case 'isHost' :
+                resetPredicate();
+                this.predicate.set('isHost',true);
+                break;
+            case 'startDate' :
+                this.predicate.delete('startDate');
+                this.predicate.set('startDate',value);
+                break;
+        }
+    }
+
+    get axiosParams() {
+        const params = new URLSearchParams();
+        params.append('pageNumber', this.pagingParams.pageNumber.toString());
+        params.append('pageSize', this.pagingParams.pageSize.toString());
+        this.predicate.forEach((value,key) => {
+            if(key === 'startDate') {
+                params.append(key,(value as Date).toISOString());
+            } else {
+                params.append(key,value);
+            }
+        })
+        return params;
     }
 
     get groupedActivities() {
@@ -34,16 +95,21 @@ export default class ActivityStore {
     loadActivities = async () => {
         this.setLoadingIntitial(true);
         try {
-            const activities = await agent.Activities.list();
-            activities.forEach(activity => {
+            const result = await agent.Activities.list(this.axiosParams);
+            result.data.forEach(activity => {
                 this.setActivity(activity);
             })
+            this.setPagination(result.pagination);
             this.setLoadingIntitial(false);
         } catch (error) {
             console.log(error);
             this.setLoadingIntitial(false);
 
         }
+    }
+
+    setPagination = (pagination: Pagination) => {
+        this.pagination = pagination;
     }
 
     loadActivity = async (id: string) => {
@@ -176,24 +242,24 @@ export default class ActivityStore {
         }
     }
 
-    updateMainPhoto = async (photo:Photo) => {
+    updateMainPhoto = async (photo: Photo) => {
         this.activityRegistry.forEach(a => {
-            if(a.host?.username === store.userStore.user?.username && a.host) {
+            if (a.host?.username === store.userStore.user?.username && a.host) {
                 a.host.image = photo.url
             }
             a.attendees.forEach(a => {
-                if(a.username === store.userStore.user?.username) {
+                if (a.username === store.userStore.user?.username) {
                     a.image = photo.url
                 }
             })
         });
     }
 
-    updateBio = async (profile:Profile | null) => {
+    updateBio = async (profile: Profile | null) => {
         if (profile !== null) {
             this.activityRegistry.forEach(a => {
                 a.attendees.forEach(b => {
-                    if(b.username === profile.username) {
+                    if (b.username === profile.username) {
                         b.bio = profile.bio
                     }
                 })

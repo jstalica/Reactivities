@@ -1,6 +1,7 @@
 import { makeAutoObservable, reaction, runInAction } from "mobx";
 import agent from "../api/agent";
-import { Photo, Profile, ProfileFormValues } from "../models/profile";
+import { Pagination, PagingParams } from "../models/pagination";
+import { Photo, Profile, ProfileEvent, ProfileFormValues } from "../models/profile";
 import { store } from "./store";
 
 export default class ProfileStore {
@@ -8,9 +9,17 @@ export default class ProfileStore {
     loadingProfile = false;
     uploading = false;
     loading = false;
+    // Followings
     followings: Profile[] = [];
     loadingFollowings: boolean = false;
     activeTab: string | number | undefined = undefined;
+    // Events
+    eventsRegistry = new Map<string, ProfileEvent>();
+    loadingEvents: boolean = false;
+    activeEventsTab: string | number | undefined;
+    pagingParams: PagingParams = new PagingParams(1,4);
+    predicate = new Map().set('IsFuture',true);
+    pagination: Pagination | null = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -19,14 +28,47 @@ export default class ProfileStore {
             if (activeTab && (activeTab === 3 || activeTab === 4)) {
                 const predicate = activeTab === 3 ? 'followers' : 'following'
                 this.loadFollowings(predicate)
+            } else if (activeTab && activeTab === 2) {
+                this.setActiveEventsTab(0);
             } else {
                 this.followings = [];
             }
         })
+
+        reaction(() => this.activeEventsTab, activeEventsTab => {
+            if(activeEventsTab === 0 || activeEventsTab === 1 || activeEventsTab === 2) {
+                this.loadEvents();
+                window.scrollTo(0,0);
+            } else {
+                //this.events = [];
+                this.eventsRegistry.clear();
+            }
+        })
+
+        reaction(
+            // When a filter is updated
+            () => this.activeEventsTab,
+            () => {
+                // Start over with pagination
+                this.pagingParams = new PagingParams(1,4);
+                // Remove the stored activities
+                this.eventsRegistry.clear();
+                // Load the new filtered activities
+                this.loadEvents();
+            }
+        )
     }
 
     setActiveTab = (activeTab: string | number | undefined) => {
         this.activeTab = activeTab;
+    }
+
+    setActiveEventsTab = (activeEventsTab: string | number | undefined) => {
+        this.activeEventsTab = activeEventsTab;
+    }
+
+    setPagingParams = (params: PagingParams) => {
+        this.pagingParams = params
     }
 
     get isCurrentUser() {
@@ -172,5 +214,75 @@ export default class ProfileStore {
             runInAction(() => this.loadingFollowings = false);
             console.log(error);
         }
+    }
+
+    loadEvents = async () => {
+        this.loadingEvents = true;
+        try {
+            const result = await agent.Profiles.listEvents(this.profile!.username, this.axiosParams);
+            runInAction(() => {
+                result.data.forEach((event) => {
+                    this.eventsRegistry.set(event.id,event);
+                })
+                //console.log(this.events);
+                this.pagination = result.pagination;
+                //console.log(this.pagination);
+                this.loadingEvents = false;
+            })
+        } catch (error) {
+            runInAction(() => this.loadingEvents = false);
+            console.log(error);
+        }
+    }
+
+    get events() {
+        if(this.activeEventsTab === 0)
+            return Array.from(this.eventsRegistry.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        else
+            return Array.from(this.eventsRegistry.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        // return Object.entries(
+        //     this.activitiesByDate.reduce((activities, activity) => {
+        //         const date = format(activity.date, 'dd MMM yyyy');
+        //         activities[date] = activities[date] ? [...activities[date], activity] : [activity];
+        //         return activities;
+        //     }, {} as { [key: string]: Activity[] })
+        // )
+    }
+
+    setPredicate = (tabIndex: number) => {
+        const resetPredicate = () => {
+            this.predicate.forEach((value,key) => {
+                this.predicate.delete(key);
+            })
+        }
+        this.setActiveEventsTab(tabIndex);
+        switch (tabIndex) {
+            case 0 :
+                resetPredicate();
+                this.predicate.set('isFuture',true);
+                break;
+            case 1 :
+                resetPredicate();
+                this.predicate.set('isPast',true);
+                break;
+            case 2 :
+                resetPredicate();
+                this.predicate.set('isHosting',true);
+                break;
+        }
+    }
+
+    get axiosParams() {
+        const params = new URLSearchParams();
+        params.append('pageNumber', this.pagingParams.pageNumber.toString());
+        params.append('pageSize', this.pagingParams.pageSize.toString());
+        this.predicate.forEach((value,key) => {
+            if(key === 'startDate') {
+                params.append(key,(value as Date).toISOString());
+            } else {
+                params.append(key,value);
+            }
+        })
+        return params;
     }
 }
